@@ -1,6 +1,5 @@
 // src/components/Footer.jsx
 import Logo from './Logo'
-import { IoIosArrowUp } from 'react-icons/io'
 import version from '../version.js'
 import { FaGithub } from 'react-icons/fa6'
 
