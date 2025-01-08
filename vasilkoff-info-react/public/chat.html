@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anastasia Chat</title>
+  <link rel="stylesheet" href="./chat.css" />
+</head>
+<body>
+  <div id="chat">
+    <div id="messages"></div>
+    <div id="input">
+      <input type="text" id="messageInput" placeholder="Type your message..." />
+      <button id="sendButton">Send</button>
+      &nbsp;<button id="clearButton">Clear</button>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://fancy-star-anastasia.maxim-e72.workers.dev/';
+    const messagesDiv = document.getElementById('messages');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendButton');
+    const clearButton = document.getElementById('clearButton');
+
+    // Load messages from localStorage
+    let messages = JSON.parse(localStorage.getItem('messages')) || [];
+
+    // Render messages
+    function renderMessages() {
+      messagesDiv.innerHTML = '';
+      messages.forEach(msg => {
+        const msgDiv = document.createElement('div');
+        msgDiv.textContent = msg.content;
+        msgDiv.className = msg.role === 'user' ? 'user' : 'anastasia';
+        messagesDiv.appendChild(msgDiv);
+      });
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    // Send message to the Worker
+    async function sendMessage() {
+      const userMessage = messageInput.value.trim();
+      if (!userMessage) return;
+
+      // Add user's message to the history
+      messages.push({ role: 'user', content: userMessage });
+      renderMessages();
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages }),
+        });
+
+        const data = await response.json();
+
+        // Ensure compatibility with response format
+        const assistantResponse = typeof data.response === 'string' 
+          ? data.response 
+          : data.response.result || 'I could not process your message.';
+
+        // Add assistant's response to the history
+        messages.push({ role: 'assistant', content: assistantResponse });
+        localStorage.setItem('messages', JSON.stringify(messages));
+        renderMessages();
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to send the message. Check the console for details.');
+      }
+
+      // Clear the input field and reset focus
+      messageInput.value = '';
+      messageInput.focus();
+    }
+
+    // Clear message history
+    function clearMessages() {
+      if (confirm('Are you sure you want to clear the chat and start over?')) {
+        messages = [];
+        localStorage.setItem('messages', JSON.stringify(messages));
+        renderMessages();
+      }
+    }
+
+    // Event listeners
+    sendButton.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keydown', event => {
+      if (event.key === 'Enter') sendMessage();
+    });
+    clearButton.addEventListener('click', clearMessages);
+
+    // Initial render
+    renderMessages();
+  </script>
+</body>
+</html>
